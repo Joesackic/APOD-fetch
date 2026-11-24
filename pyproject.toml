@@ -8,12 +8,13 @@ authors = [
 ]
 requires-python = ">=3.14"
 dependencies = [
+    "beautifulsoup4>=4.15.0",
     "requests>=2.34.2",
     "rich>=15.0.0",
 ]
 
 [project.scripts]
-apodfetch = "apodfetch:main"
+apodfetch = "apodfetch.cli:main"
 
 [build-system]
 requires = ["uv_build>=0.13.9,<0.14.0"]
