@@ -1,0 +1,36 @@
+# Maintainer: Joesackic <joel.schutt0 at gmail dot com>
+
+pkgname=apodfetch-git
+pkgver=0.1.0.r6.g7bcaa4e
+pkgrel=1
+pkgdesc='Display NASA Astronomy Picture of the Day in the terminal'
+arch=('any')
+url='https://github.com/Joesackic/APOD-fetch'
+license=('MIT')
+depends=('python>=3.14' 'python-beautifulsoup4' 'python-requests' 'python-rich')
+makedepends=('git' 'python-build' 'python-installer' 'python-uv-build' 'python-wheel')
+optdepends=('kitty: display APOD images in supported terminals')
+provides=('apodfetch')
+conflicts=('apodfetch')
+source=('APOD-fetch::git+https://github.com/Joesackic/APOD-fetch.git')
+sha256sums=('SKIP')
+
+pkgver() {
+    cd "${srcdir}/APOD-fetch"
+    printf '0.1.0.r%s.g%s' "$(git rev-list --count HEAD)" "$(git rev-parse --short HEAD)"
+}
+
+prepare() {
+    git -C "${srcdir}/APOD-fetch" clean -dfx
+}
+
+build() {
+    cd "${srcdir}/APOD-fetch"
+    python -m build --wheel --no-isolation
+}
+
+package() {
+    cd "${srcdir}/APOD-fetch"
+    python -m installer --destdir="${pkgdir}" dist/*.whl
+    install -Dm644 LICENSE -t "${pkgdir}/usr/share/licenses/${pkgname}/"
+}
