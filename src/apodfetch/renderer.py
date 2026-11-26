@@ -12,12 +12,26 @@ console = Console()
 def clean_html(html: str) -> str:
     return BeautifulSoup(html, "html.parser").get_text()
 
+def render_text_apod(data: dict) -> None:
+    console.print("Image preview unavailable. Today's APOD:")
+    console.print(f"Title: {data.get('title') or 'Unknown'}")
+    console.print(f"Date: {data.get('date') or 'Unknown'}")
+    console.print(f"Credit: {clean_html(data.get('credit') or 'Unknown')}")
+    if data.get("explanation"):
+        console.print(clean_html(data["explanation"]))
+    if data.get("url"):
+        console.print(f"View it online: {data['url']}")
+
 def short_explanation(html: str, max_chars: int = 220) -> str:
     text = clean_html(html)
     text = " ".join(text.split())
     return textwrap.shorten(text, width=max_chars, placeholder="...")
 
 def render_apod(path: Path, data: dict):
+    if not console.is_terminal or shutil.which("kitten") is None:
+        render_text_apod(data)
+        return
+
     console.clear()
 
     terminal_width, terminal_height = shutil.get_terminal_size()
@@ -28,27 +42,32 @@ def render_apod(path: Path, data: dict):
     text_offset = image_width + 3
     text_width = max(1, terminal_width - text_offset - 1)
 
-    subprocess.run(
-        [
-            "kitten",
-            "icat",
-            "--align", "left",
-            "--place", f"{image_width}x{image_height}@0x0",
-            str(path)
-        ],
-        check=True
-    )
+    try:
+        subprocess.run(
+            [
+                "kitten",
+                "icat",
+                "--align", "left",
+                "--place", f"{image_width}x{image_height}@0x0",
+                str(path)
+            ],
+            check=True,
+            stderr=subprocess.DEVNULL,
+        )
+    except (OSError, subprocess.CalledProcessError):
+        render_text_apod(data)
+        return
 
     print(f"\033[1;{text_offset + 1}H", end="")
     console.print("APOD FETCH", style="bold cyan")
 
     # summary = short_explanation(data["explanation"])
 
-    summary = clean_html(data["explanation"])
+    summary = clean_html(data.get("explanation") or "")
     
     lines = [
-        f"Title: {data['title']}",
-        f"Date: {data['date']}",
+        f"Title: {data.get('title') or 'Unknown'}",
+        f"Date: {data.get('date') or 'Unknown'}",
         f"Credit: {clean_html(data.get('credit') or 'Unknown')}",
         "",
         "",
